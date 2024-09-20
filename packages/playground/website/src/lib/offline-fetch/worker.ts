@@ -54,8 +54,8 @@ self.addEventListener('message', async (event) => {
 			const response = await fetch(fetchRequest, { ...init, signal });
 
 			// Cache the response
-			const cache = await caches.open('offline-fetch-cache');
-			cache.put(fetchRequest, response.clone());
+			const offlineFetchCache = await caches.open('offline-fetch-cache');
+			offlineFetchCache.put(fetchRequest, response.clone());
 
 			// Extract response details
 			const { status, statusText } = response;

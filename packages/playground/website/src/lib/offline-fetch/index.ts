@@ -1,3 +1,5 @@
+import offlineFetchWorkerUrl from './worker?worker&url';
+
 export function offlineFetch(
 	input: RequestInfo,
 	init?: RequestInit
@@ -42,7 +44,7 @@ export function offlineFetch(
 			}
 		} else {
 			// Online: Use a worker to perform fetch and caching
-			const worker = new Worker('offlineFetchWorker.js');
+			const worker = new Worker(offlineFetchWorkerUrl);
 
 			// Set up message handling
 			const handleMessage = (event: MessageEvent) => {
