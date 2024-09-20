@@ -65,9 +65,6 @@ export function BlueprintsPanel({
 	}
 
 	function previewBlueprint(blueprintPath: BlueprintsIndexEntry['path']) {
-		// @TODO: Handle the "site replacement" flow in the route handler.
-		// @TODO: Fix the flicker in the sidebar (the preview site first disappears, then reappears
-		// after a moment)
 		// @TODO: Don't assume the Blueprint preview site slug is necessarily "blueprint-preview".
 		dispatch(removeSite('blueprint-preview'));
 		redirectTo(

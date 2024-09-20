@@ -194,7 +194,7 @@ export const JustViewport = function JustViewport({
 	);
 	useEffect(() => {
 		const iframe = iframeRef.current;
-		if (!iframe) {
+		if (!iframe || site.state !== 'ready') {
 			return;
 		}
 
@@ -210,9 +210,21 @@ export const JustViewport = function JustViewport({
 			dispatch(removeClientInfo(siteSlug));
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [siteSlug, iframeRef, runtimeConfigString]);
+	}, [siteSlug, iframeRef, site.state, runtimeConfigString]);
 
 	const error = useAppSelector(selectActiveSiteError);
+
+	if (site.state === 'resolving-blueprint') {
+		return (
+			<div className={css.fullSize}>
+				{/* 
+				Don't display anything to avoid a rapid visual flicker between a 
+				"Resolving Blueprint" message and the progress bar.
+				@TODO: Start with the same loading bar as the iframe would display.
+				 */}
+			</div>
+		);
+	}
 
 	if (error) {
 		return (

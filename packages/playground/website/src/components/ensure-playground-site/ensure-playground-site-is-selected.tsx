@@ -8,6 +8,8 @@ import {
 	deriveSlugFromSiteName,
 	SiteInfo,
 	selectSiteBySlug,
+	updateSite,
+	updateSiteMetadata,
 } from '../../lib/state/redux/slice-sites';
 import { Blueprint, compileBlueprint } from '@wp-playground/blueprints';
 import { SiteMetadata } from '../../lib/site-metadata';
@@ -80,7 +82,7 @@ export function EnsurePlaygroundSiteIsSelected({
 			// Lean on the Query API parameters and the Blueprint API to
 			// create the new site.
 			const url = new URL(window.location.href);
-			const blueprint = await resolveBlueprintFromURL(url);
+
 			const siteNameFromUrl = url.searchParams.get('name')?.trim();
 			const urlParams = {
 				searchParams: Object.fromEntries(url.searchParams.entries()),
@@ -89,7 +91,6 @@ export function EnsurePlaygroundSiteIsSelected({
 			const newSiteInfo = await createNewSiteInfo({
 				metadata: {
 					name: siteNameFromUrl || undefined,
-					originalBlueprint: blueprint,
 				},
 				originalUrlParams: urlParams,
 			});
@@ -106,9 +107,29 @@ export function EnsurePlaygroundSiteIsSelected({
 				return;
 			}
 
+			newSiteInfo.state = 'resolving-blueprint';
+
 			// Create a new site otherwise
 			await dispatch(addSite(newSiteInfo));
 			dispatch(setActiveSite(newSiteInfo.slug));
+
+			const blueprint = await resolveBlueprintFromURL(url);
+			dispatch(
+				updateSiteMetadata({
+					slug: newSiteInfo.slug,
+					changes: {
+						originalBlueprint: blueprint,
+					},
+				})
+			);
+			dispatch(
+				updateSite({
+					slug: newSiteInfo.slug,
+					changes: {
+						state: 'ready',
+					},
+				})
+			);
 		}
 
 		ensureSiteIsSelected();
@@ -142,6 +163,7 @@ async function createNewSiteInfo(
 
 	return {
 		slug: deriveSlugFromSiteName(name),
+		state: 'ready',
 
 		...initialInfo,
 

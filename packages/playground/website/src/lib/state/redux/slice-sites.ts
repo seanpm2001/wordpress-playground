@@ -18,6 +18,7 @@ import { opfsSiteStorage } from '../opfs/opfs-site-storage';
  */
 export interface SiteInfo {
 	slug: string;
+	state: 'ready' | 'resolving-blueprint';
 	originalUrlParams?: {
 		searchParams?: Record<string, string>;
 		hash?: string;
