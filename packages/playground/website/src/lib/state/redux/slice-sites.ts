@@ -191,6 +191,9 @@ export function removeSite(slug: string) {
 	) => {
 		const activeSite = selectActiveSite(getState());
 		const siteInfo = selectSiteBySlug(getState(), slug);
+		if (!siteInfo) {
+			return;
+		}
 		if (siteInfo.metadata.storage !== 'none') {
 			await opfsSiteStorage?.delete(siteInfo.slug);
 		}

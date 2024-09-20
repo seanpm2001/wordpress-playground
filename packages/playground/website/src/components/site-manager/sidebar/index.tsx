@@ -18,9 +18,10 @@ import {
 	useAppDispatch,
 	useAppSelector,
 } from '../../../lib/state/redux/store';
+import { useMemo } from 'react';
 import { SiteCreateButton } from '../site-create-button';
 import { SiteLogo } from '../../../lib/site-metadata';
-import { selectSortedSites } from '../../../lib/state/redux/slice-sites';
+import { setSiteManagerSection } from '../../../lib/state/redux/slice-ui';
 
 export function Sidebar({
 	className,
@@ -29,12 +30,27 @@ export function Sidebar({
 	className?: string;
 	afterSiteClick?: (slug: string) => void;
 }) {
-	const sites = useAppSelector(selectSortedSites);
-	const activeSite = useActiveSite();
+	const sitesRaw = useAppSelector((state) => state.sites.entities);
+	// Sort by creation date DESC
+	const sites = useMemo(() => {
+		return sitesRaw
+			? Object.values(sitesRaw).sort(
+					(a, b) =>
+						(b.metadata.whenCreated || 0) -
+						(a.metadata.whenCreated || 0)
+			  )
+			: [];
+	}, [sitesRaw]);
+	const activeSite = useActiveSite()!;
 	const dispatch = useAppDispatch();
+
+	const activeSiteManagerSection = useAppSelector(
+		(state) => state.ui.siteManagerSection
+	);
 
 	const onSiteClick = (slug: string) => {
 		dispatch(setActiveSite(slug));
+		dispatch(setSiteManagerSection('site-details'));
 		afterSiteClick?.(slug);
 	};
 
@@ -83,7 +99,7 @@ export function Sidebar({
 						css.sidebarListLabel
 					)}
 				>
-					Your Playgrounds
+					Your sites
 				</Heading>
 				<MenuGroup className={css.sidebarList}>
 					{sites.map((site) => {
@@ -97,13 +113,15 @@ export function Sidebar({
 								className={classNames(css.sidebarItem, {
 									[css.sidebarItemSelected]: isSelected,
 								})}
-								onClick={() => onSiteClick(site.slug)}
+								onClick={() => {
+									onSiteClick(site.slug);
+								}}
 								isSelected={isSelected}
 								// eslint-disable-next-line jsx-a11y/aria-role
 								role=""
 								title={
 									site.metadata.storage === 'none'
-										? 'This is a temporary Playground. Your changes will be lost on page refresh.'
+										? 'This is a temporary site. Your changes will be lost when the site is reset.'
 										: ''
 								}
 								icon={
@@ -141,6 +159,29 @@ export function Sidebar({
 						);
 					})}
 				</MenuGroup>
+				<Heading
+					level="2"
+					className={classNames(
+						css.sidebarLabel,
+						css.sidebarListLabel
+					)}
+				>
+					Other features
+				</Heading>
+				<MenuGroup className={css.sidebarList}>
+					<MenuItem
+						className={classNames(css.sidebarItem, {
+							[css.sidebarItemSelected]:
+								activeSiteManagerSection === 'blueprints',
+						})}
+						onClick={() =>
+							dispatch(setSiteManagerSection('blueprints'))
+						}
+						isSelected={activeSiteManagerSection === 'blueprints'}
+					>
+						Blueprints
+					</MenuItem>
+				</MenuGroup>
 			</nav>
 			<footer
 				className={classNames(css.sidebarSection, css.sidebarFooter)}
@@ -171,7 +212,7 @@ export function Sidebar({
 							className={css.addSiteButtonButton}
 							onClick={onClick}
 						>
-							Add Playground
+							Add site
 						</Button>
 					</div>
 				)}

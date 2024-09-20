@@ -26,8 +26,11 @@ import { ReportError } from '../../toolbar-buttons/report-error';
 import { RestoreFromZipMenuItem } from '../../toolbar-buttons/restore-from-zip';
 import { TemporarySiteNotice } from '../temporary-site-notice';
 import { SitePersistButton } from '../site-persist-button';
-import { SiteInfo } from '../../../lib/state/redux/slice-sites';
-import { setSiteManagerOpen } from '../../../lib/state/redux/slice-ui';
+import { removeSite, SiteInfo } from '../../../lib/state/redux/slice-sites';
+import {
+	setSiteManagerOpen,
+	setSiteManagerSection,
+} from '../../../lib/state/redux/slice-ui';
 import { selectClientInfoBySiteSlug } from '../../../lib/state/redux/slice-clients';
 import { encodeStringAsBase64 } from '../../../lib/base64';
 
@@ -49,15 +52,11 @@ function SiteInfoRow({
 export function SiteInfoPanel({
 	className,
 	site,
-	removeSite,
 	mobileUi,
-	onBackButtonClick,
 }: {
 	className: string;
 	site: SiteInfo;
-	removeSite: (site: SiteInfo) => Promise<void>;
 	mobileUi?: boolean;
-	onBackButtonClick?: () => void;
 }) {
 	const offline = useAppSelector((state) => state.ui.offline);
 	const removeSiteAndCloseMenu = async (onClose: () => void) => {
@@ -66,15 +65,12 @@ export function SiteInfoPanel({
 			`Are you sure you want to delete the site '${site.metadata.name}'?`
 		);
 		if (proceed) {
-			await removeSite(site);
+			await dispatch(removeSite(site.slug));
 			onClose();
 		}
 	};
 	const clientInfo = useAppSelector((state) =>
 		selectClientInfoBySiteSlug(state, site.slug)
-	);
-	const activeSiteError = useAppSelector(
-		(state) => state.ui.activeSite?.error
 	);
 	const playground = clientInfo?.client;
 	const dispatch = useAppDispatch();
@@ -133,7 +129,13 @@ export function SiteInfoPanel({
 												/>
 											)}
 											className={css.grayLinkDark}
-											onClick={onBackButtonClick}
+											onClick={() => {
+												dispatch(
+													setSiteManagerSection(
+														'sidebar'
+													)
+												);
+											}}
 										/>
 									</FlexItem>
 								)}
@@ -241,11 +243,6 @@ export function SiteInfoPanel({
 												<MenuItem
 													aria-label="Delete this site"
 													className={css.danger}
-													disabled={
-														// Allow deletion of broken sites with loading errors
-														!playground &&
-														!activeSiteError
-													}
 													onClick={() =>
 														removeSiteAndCloseMenu(
 															onClose
@@ -258,23 +255,17 @@ export function SiteInfoPanel({
 											<MenuGroup>
 												<DownloadAsZipMenuItem
 													onClose={onClose}
-													disabled={!playground}
 												/>
 												<RestoreFromZipMenuItem
 													onClose={onClose}
-													disabled={!playground}
 												/>
 												<GithubImportMenuItem
 													onClose={onClose}
-													disabled={
-														offline || !playground
-													}
+													disabled={offline}
 												/>
 												<GithubExportMenuItem
 													onClose={onClose}
-													disabled={
-														offline || !playground
-													}
+													disabled={offline}
 												/>
 											</MenuGroup>
 											<MenuGroup>
@@ -402,11 +393,12 @@ function SiteSettingsTab({ site }: { site: SiteInfo }) {
 						expanded={true}
 					>
 						<FlexItem>
-							<h2 className={css.sectionTitle}>
-								Playground details
-							</h2>
+							<h2 className={css.sectionTitle}>Site details</h2>
 						</FlexItem>
-						<SiteInfoRow label="Name" value={site.metadata.name} />
+						<SiteInfoRow
+							label="Site name"
+							value={site.metadata.name}
+						/>
 						<SiteInfoRow
 							label="Storage"
 							value={
@@ -548,7 +540,9 @@ function SiteSettingsTab({ site }: { site: SiteInfo }) {
 										className={css.buttonNoPadding}
 										onClick={onClick}
 									>
-										Edit Playground settings
+										{site.metadata.storage === 'none'
+											? 'Edit site settings'
+											: 'Edit runtime configuration'}
 									</Button>
 								)}
 							</SiteEditButton>
