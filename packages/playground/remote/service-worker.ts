@@ -86,12 +86,47 @@ self.addEventListener('fetch', (event) => {
 		return;
 	}
 
+	let requestPromise = Promise.resolve(event.request);
+	if (url.pathname.startsWith('/proxy/')) {
+		const segments = url.pathname.split('/');
+		const command = segments[2];
+		switch (command) {
+			case 'load-cached-when-offline': {
+				const proxiedUrl =
+					url.pathname.substring(
+						'/proxy/'.length + command.length + 1
+					) +
+					(url?.search ? '?' + url.search : '') +
+					(url?.hash ? '#' + url.hash : '');
+				requestPromise = requestPromise.then((request) => {
+					return cloneRequest(request, {
+						url: proxiedUrl,
+					});
+				});
+				const isOffline = !navigator.onLine;
+				event.respondWith(
+					Promise.all([cachePromise, requestPromise]).then(
+						([cache, request]) =>
+							// Always save the response to cache, but only load
+							// it from the cache when we're offline.
+							cache.cachedFetch(request, {
+								loadFromCache: isOffline,
+							})
+					)
+				);
+				return;
+			}
+		}
+	}
+
 	/**
 	 * Respond with cached assets if available.
 	 * If the asset is not cached, fetch it from the network and cache it.
 	 */
 	event.respondWith(
-		cachePromise.then((cache) => cache.cachedFetch(event.request))
+		Promise.all([cachePromise, requestPromise]).then(([cache, request]) =>
+			cache.cachedFetch(request)
+		)
 	);
 });
 

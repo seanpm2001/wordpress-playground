@@ -32,12 +32,22 @@ export class OfflineModeCache {
 		return Promise.all(oldKeys.map((key) => caches.delete(key)));
 	}
 
-	async cachedFetch(request: Request): Promise<Response> {
+	async cachedFetch(
+		request: Request,
+		{
+			loadFromCache = true,
+		}: {
+			loadFromCache?: boolean;
+		} = {}
+	): Promise<Response> {
 		if (!this.shouldCacheUrl(new URL(request.url))) {
 			return await fetch(request);
 		}
 
-		let response = await this.cache.match(request, { ignoreSearch: true });
+		let response = undefined;
+		if (loadFromCache) {
+			response = await this.cache.match(request, { ignoreSearch: true });
+		}
 		if (!response) {
 			response = await fetch(request);
 			if (response.ok) {

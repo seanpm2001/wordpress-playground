@@ -41,7 +41,7 @@ export function BlueprintsPanel({
 	const { data, isLoading, isError } = useFetch<
 		Record<string, BlueprintsIndexEntry>
 	>(
-		'https://raw.githubusercontent.com/WordPress/blueprints/trunk/index.json'
+		'/proxy/load-cached-when-offline/https://raw.githubusercontent.com/WordPress/blueprints/trunk/index.json'
 	);
 
 	const [view, setView] = useState<View>({
